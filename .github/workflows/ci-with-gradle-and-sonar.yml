@@ -1,0 +1,118 @@
+# Workflow 이름
+name: CI Report with Gradle & Sonar
+
+# 트리거 이벤트
+on:
+  pull_request:
+    branches: [ "main", "master", "develop", "release" ]
+
+# 테스트 결과 작성을 위해 쓰기 권한 추가
+permissions: write-all
+
+# 실행
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # 실행 스텝
+    steps:
+
+      # workflow 가 repo 에 접근하기 위한 Marketplace action
+      - uses: actions/checkout@v4.2.2
+
+      # 우리 repo 디렉토리는 ~/ 아니라 그냥 ./ 임
+      # workflow 실행 시 구조 잘 확인하려고 추가한 step
+      - name: Show CWD Properties
+        run: |
+          echo "Current directory : `pwd`"
+          ls -al
+          echo 'tree ./'
+          tree ./ -a
+
+      # jdk setup
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.5.0
+        with:
+          java-version: '17'
+          distribution: 'oracle'  # 그냥 Oracle JDK
+
+
+      # gradle 캐시해서 빌드 시간 단축
+      - name: Gradle caching
+        uses: actions/cache@v4.1.2
+        with:
+          # cache 저장할 폴더 설정
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys:
+            ${{ runner.os }}-gradle-
+
+
+      # gradlew 실행 권한 부여
+      - name: Grant Execute Permission For Gradlew
+        run: |
+          cd app
+          chmod +x ./gradlew
+
+
+      # test 없이 그냥 build
+      - name: Build with Gradle
+        run: |
+          cd app
+          ./gradlew build -x test --build-cache
+      
+
+      # 테스트 실행
+      - name: Run Tests
+        run: |
+          cd app
+          ./gradlew --info test
+
+
+      # 실행할꺼 다 실행하고 다시 한번 파일 구조 확인하기 (편의성)
+      # workflow 실행 시 구조 잘 확인하려고 추가한 step
+      - name: Show CWD Properties
+        run: |
+          echo "Current directory : `pwd`"
+          ls -al
+          echo 'tree ./'
+          tree ./ -a
+
+
+      # Pull Request 코멘트에 테스트 결과 댓글 달기
+      - name: Publish Unit Test Results To PR Comment
+        uses: EnricoMi/publish-unit-test-result-action@v2.18.0
+        if: ${{ always() }}   # 앞에 step 이 fail 해도 실행
+        with:
+          files: app/build/test-results/**/*.xml
+
+
+      # 테스트 실패한 부분 PR Code Review 에 주석 달기
+      - name: Add Annotation to Failed Test on PR Code Review
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure()  # 앞에 step 이 fail 해도 실행
+        with:
+          # test report 위치
+          report_paths: '**/build/test-results/test/*.xml'
+          require_tests: true
+
+
+      # Sonar Cloud 패키지 캐싱
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4.1.2
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+
+      # Sonar 로 코드 분석 & SonarCloud 로 결과 upload
+      - name: Analyze via Sonar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          cd app
+          ./gradlew sonar --info

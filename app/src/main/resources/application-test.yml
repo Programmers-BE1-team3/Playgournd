@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    username: sa
+    password:
+
+    # use h2 (in memory) persistence with testing profile
+    url: jdbc:h2:mem:test
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+
+logging:
+  level:
+    web: debug
+    sql: debug

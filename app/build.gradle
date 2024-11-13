@@ -1,7 +1,16 @@
+//file:noinspection GroovyAssignabilityCheck
+// warning 비활성화
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
+
+    // 테코 커버리지 분석
+    id 'jacoco'
+
+    // sonar cloud 분석 위한 plugin
+    id "org.sonarqube" version "5.1.0.4882"
 }
 
 group = 'core'
@@ -38,4 +47,54 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    // test 실패한거 있어도 OS 에 0 코드 제공
+    ignoreFailures = true
+
+    // test 실행 후 jacocoTestReport 실행 되도록
+    finalizedBy 'jacocoTestReport'
+}
+
+// jacocoTestReport 구성
+jacocoTestReport {
+    dependsOn test  // test 작업 실행 후 report 구성
+
+    // report 양식 enable
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = true
+    }
+
+    // coverage 에 포함시키지 않을 항목들
+    // QueryDSL 로 만들어진거 나중에 포함해야 함
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, excludes: [
+                    "**/*Application*"
+            ])
+        }))
+    }
+
+    // 여기서 exclude 시켜야 불필요한 항목들 coverage 분석 안함
+    // jacocoTestCoverageVerification 에서 exclude 하면
+    // verification 실패 항목에서만 배제하는 거
+}
+
+// gradlew 에 sonar task 구성
+sonar {
+    properties {
+        property "sonar.projectKey", "Programmers-BE1-team3_Playgournd"
+        property "sonar.organization", "programmers-be1-team3"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.language", "java"
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.sources", "src/main/java"
+        property "sonar.tests", "src/test/java"
+
+        // jacocoTestReport 수행 시 test report xml 파일 위치 (중요)
+        property 'sonar.coverage.jacoco.xmlReportPaths', 'build/reports/jacoco/test/jacocoTestReport.xml'
+        property "sonar.test.inclusions", "**/*Test.java"
+        property "sonar.coverage.exclusions", "**/dto/**, **/event/**, **/*InitData*, **/*Application*, **/exception/**, **/service/alarm/**, **/aop/**, **/config/**, **/MemberRole*"
+    }
 }

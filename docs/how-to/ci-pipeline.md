@@ -268,12 +268,22 @@ jobs:
   <img src="../../assets/image/how2-ci/ci-code-review-annotation-2.png" width="80%" height="80%">
 </p>
 
-다만 한가지 이상한 점이 있다.
+~~다만 한가지 이상한 점이 있다.~~
 
-원인은 정확하게 파악하지 못햇는데, 만약 한 `PR` 에서 여러번 `push` 가 이뤄저 `action` 이 새로 실행될 때, 위 `annotation` 이 보일때도 있고 안보일
-때도 있다.
+~~원인은 정확하게 파악하지 못햇는데, 만약 한 `PR` 에서 여러번 `push` 가 이뤄저 `action` 이 새로 실행될 때, 위 `annotation` 이 보일때도 있고
+안보일
+때도 있다.~~
 
-이것이 단순히 `"action 이 실행된 commit 에서 해당 test code 들이 안보이기 때문"` 에 그런것인지, 아니면 내가 스크립트를 잘못 짠 건지 모르겠다.
+~~이것이 단순히 `"action 이 실행된 commit 에서 해당 test code 들이 안보이기 때문"` 에 그런것인지, 아니면 내가 스크립트를 잘못 짠 건지 모르겠다.~~
+
+> ++ 확인하니 아래 그림 오른쪽 `파일 버튼` `(See this annotation in the file changed)` 를 눌러야 `PR Code Review`
+> 에 `annotation` 이 추가된다.
+>
+> <!-- ci-code-review-annotation-3.png -->
+>
+> <p align="center">
+>   <img src="../../assets/image/how2-ci/ci-code-review-annotation-3.png" width="80%" height="80%">
+> </p>
 
 ---
 
